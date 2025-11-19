@@ -31,18 +31,29 @@ jobs:
           IMAGE_URI="${{ github.event.inputs.IMAGE_URI }}"
           echo "Updating kustomization.yaml with image: $IMAGE_URI"
 
-          # Extract newName et newTag
-          IMAGE_NAME=$(echo $IMAGE_URI | cut -d':' -f1)
-          IMAGE_TAG=$(echo $IMAGE_URI | cut -d':' -f2)
+          # Logique plus robuste pour extraire newName et newTag
+          # (gère mieux les noms d'images contenant des deux-points, ex: avec un port)
+          IMAGE_TAG=$(echo "$IMAGE_URI" | sed 's/.*:\(.*\)/\1/')
+          IMAGE_NAME=$(echo "$IMAGE_URI" | sed 's/\(.*\):.*/\1/')
+          
+          # Si le format est 'name:tag' simple, on revient à l'ancien comportement
+          if [ "$IMAGE_TAG" == "$IMAGE_NAME" ]; then
+            IMAGE_NAME=$(echo $IMAGE_URI | cut -d':' -f1)
+            IMAGE_TAG=$(echo $IMAGE_URI | cut -d':' -f2)
+          fi
+          
+          echo "Extracted Name: $IMAGE_NAME"
+          echo "Extracted Tag: $IMAGE_TAG"
+
+          # Mise à jour avec yq
           yq eval -i ".images[0].newName = \"$IMAGE_NAME\" | .images[0].newTag = \"$IMAGE_TAG\"" ./kustomization.yaml
 
-      # Commit et push des changements
+      # Commit et push des changements (méthode recommandée)
       - name: Commit and push changes
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add kustomization.yaml
-          git commit -m "Update image to $IMAGE_URI" || echo "No changes to commit"
-          git push https://x-access-token:${PERSONAL_GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git HEAD:main
-        env:
-          PERSONAL_GITHUB_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
+          file_pattern: kustomization.yaml
+          commit_message: "Update image to ${{ github.event.inputs.IMAGE_URI }}"
+          commit_user_name: github-actions[bot]
+          commit_user_email: github-actions[bot]@users.noreply.github.com
