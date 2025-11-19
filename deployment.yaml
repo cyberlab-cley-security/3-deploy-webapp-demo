@@ -1,0 +1,157 @@
+# --------------------------
+# Namespace definition
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloudlabs-webapp
+
+---
+
+# ConfigMap for MongoDB connection
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webapp-config
+  namespace: cloudlabs-webapp
+data:
+  MONGO_HOST: "10.0.3.10"
+  MONGO_PORT: "27017"
+  MONGO_DB: "cloudapps-app-db"
+
+---
+
+# Secret for MongoDB credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: webapp-secret
+  namespace: cloudlabs-webapp
+type: Opaque
+stringData:
+  MONGO_USER: "appuser"
+  MONGO_PASS: "AppPass123!"
+
+---
+
+# Deployment for the web application
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudlabs-webapp
+  namespace: cloudlabs-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudlabs-webapp
+  template:
+    metadata:
+      labels:
+        app: cloudlabs-webapp
+    spec:
+      serviceAccountName: secret-sa
+      containers:
+      - name: webapp
+        # Image placeholder replaced by Kustomize
+        image: IMAGE_PLACEHOLDER
+        ports:
+        - containerPort: 3000
+        env:
+        - name: MONGO_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: webapp-config
+              key: MONGO_HOST
+        - name: MONGO_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: webapp-config
+              key: MONGO_PORT
+        - name: MONGO_DB
+          valueFrom:
+            configMapKeyRef:
+              name: webapp-config
+              key: MONGO_DB
+        - name: MONGO_USER
+          valueFrom:
+            secretKeyRef:
+              name: webapp-secret
+              key: MONGO_USER
+        - name: MONGO_PASS
+          valueFrom:
+            secretKeyRef:
+              name: webapp-secret
+              key: MONGO_PASS
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        # Readiness probe for health check
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        # Liveness probe to restart unhealthy pods
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
+---
+
+# Service to expose the application
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudlabs-webapp
+  namespace: cloudlabs-webapp
+spec:
+  selector:
+    app: cloudlabs-webapp
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+
+---
+
+# ServiceAccount for the application
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: secret-sa
+  namespace: cloudlabs-webapp
+
+---
+
+# ClusterRole for ServiceAccount
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: secret-role
+rules:
+- apiGroups: ["*"]
+  resources: ["serviceaccounts","serviceaccounts/token"]
+  verbs: ["*"]
+
+---
+
+# ClusterRoleBinding for ServiceAccount
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pod-sa-clusterrolebinding
+subjects:
+- kind: ServiceAccount
+  name: secret-sa
+  namespace: cloudlabs-webapp
+  apiGroup: ""
+roleRef:
+  kind: ClusterRole
+  name: secret-role
+  apiGroup: ""

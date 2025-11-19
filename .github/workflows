@@ -1,0 +1,48 @@
+name: Update Kustomization for ArgoCD
+
+on:
+  workflow_dispatch:
+    inputs:
+      IMAGE_URI:
+        description: 'Full Docker image URI (ex: 016246143337.dkr.ecr.us-east-1.amazonaws.com/chris:0.0.1)'
+        type: string
+        default: '<CHANGE ME>' 
+        required: true
+
+jobs:
+  update_kustomization:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Install yq to edit kustomization.yaml
+      - name: Install yq
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/download/v4.48.0/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+          yq --version
+
+      # Update kustomization.yaml
+      - name: Update kustomization.yaml image
+        run: |
+          IMAGE_URI="${{ github.event.inputs.IMAGE_URI }}"
+          echo "Updating kustomization.yaml with image: $IMAGE_URI"
+
+          yq eval -i '
+            .images[0].newName = strenv(IMAGE_URI | split(":")[0]) |
+            .images[0].newTag = strenv(IMAGE_URI | split(":")[-1])
+          ' ./kustomization.yaml
+
+      # Commit et push des changements
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add kustomization.yaml
+          git commit -m "Update image to ${{ github.event.inputs.IMAGE_URI }}"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
