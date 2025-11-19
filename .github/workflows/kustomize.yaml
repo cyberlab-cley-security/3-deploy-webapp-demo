@@ -21,8 +21,8 @@ jobs:
       # Install yq to edit kustomization.yaml
       - name: Install yq
         run: |
-          sudo wget https://github.com/mikefarah/yq/releases/download/v4.48.0/yq_linux_amd64 -O /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
+          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq
+          sudo chmod +x /usr/local/bin/yq
           yq --version
 
       # Update kustomization.yaml
