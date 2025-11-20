@@ -17,6 +17,9 @@ jobs:
       # Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          # Le token est passé ici pour configurer l'accès en écriture
+          token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
 
       # Install yq to edit kustomization.yaml
       - name: Install yq
@@ -52,7 +55,6 @@ jobs:
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
           file_pattern: kustomization.yaml
           commit_message: "Update image to ${{ github.event.inputs.IMAGE_URI }}"
           commit_user_name: github-actions[bot]
