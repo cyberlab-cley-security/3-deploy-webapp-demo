@@ -2,12 +2,8 @@ name: Update Kustomization for ArgoCD
 
 on:
   workflow_dispatch:
-    inputs:
-      IMAGE_URI:
-        description: 'Full Docker image URI (ex: 016246143337.dkr.ecr.us-east-1.amazonaws.com/chris:0.0.1)'
-        type: string
-        default: '<CHANGE ME>'
-        required: true
+  repository_dispatch:
+    types: [deploy-image]
 
 jobs:
 
@@ -61,20 +57,13 @@ jobs:
       # Update kustomization.yaml
       - name: Update kustomization.yaml image
         run: |
-          IMAGE_URI="${{ github.event.inputs.IMAGE_URI }}"
+          # Get IMAGE_URI from workflow_dispatch or repository_dispatch
+          IMAGE_URI="${{ github.event.inputs.IMAGE_URI || github.event.client_payload.image_uri }}"
           echo "Updating kustomization.yaml with image: $IMAGE_URI"
-
-          IMAGE_TAG=$(echo "$IMAGE_URI" | sed 's/.*:\(.*\)/\1/')
-          IMAGE_NAME=$(echo "$IMAGE_URI" | sed 's/\(.*\):.*/\1/')
-
-          if [ "$IMAGE_TAG" == "$IMAGE_NAME" ]; then
-            IMAGE_NAME=$(echo $IMAGE_URI | cut -d':' -f1)
-            IMAGE_TAG=$(echo $IMAGE_URI | cut -d':' -f2)
-          fi
-
+          IMAGE_NAME="${IMAGE_URI%:*}"
+          IMAGE_TAG="${IMAGE_URI##*:}"
           echo "Extracted Name: $IMAGE_NAME"
           echo "Extracted Tag: $IMAGE_TAG"
-
           yq eval -i ".images[0].newName = \"$IMAGE_NAME\" | .images[0].newTag = \"$IMAGE_TAG\"" ./kustomization.yaml
 
   ###############################################
@@ -84,6 +73,6 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           file_pattern: kustomization.yaml
-          commit_message: "Update image to ${{ github.event.inputs.IMAGE_URI }}"
+          commit_message: "Update image to ${{ github.event.inputs.IMAGE_URI || github.event.client_payload.image_uri }}"
           commit_user_name: github-actions[bot]
           commit_user_email: github-actions[bot]@users.noreply.github.com
