@@ -1,12 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 # Reference the deployment manifest
 resources:
   - deployment.yaml
-
 # Dynamically set the Docker image name and tag
 images:
-  - name: IMAGE_PLACEHOLDER   # Matches placeholder in deployment.yaml
-    newName: chrisley75/cloudlabs-webapp  # Can be changed dynamically
-    newTag: "1.0.1"                        # Can be updated via CI/CD
+  - name: IMAGE_PLACEHOLDER # Matches placeholder in deployment.yaml
+    newName: 016246143337.dkr.ecr.us-east-1.amazonaws.com/chris # Can be changed dynamically
+    newTag: "12" # Can be updated via CI/CD
