@@ -86,24 +86,24 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        # Readiness probe for health check
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 15
-          timeoutSeconds: 3
-          periodSeconds: 5
-          failureThreshold: 3
-        # Liveness probe to restart unhealthy pods
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 30
-          timeoutSeconds: 5
-          periodSeconds: 10
-          failureThreshold: 3
+#        # Readiness probe for health check
+#        readinessProbe:
+#          httpGet:
+#            path: /health
+#            port: 3000
+#          initialDelaySeconds: 15
+#          timeoutSeconds: 3
+#          periodSeconds: 5
+#          failureThreshold: 3
+#        # Liveness probe to restart unhealthy pods
+#        livenessProbe:
+#          httpGet:
+#            path: /health
+#            port: 3000
+#          initialDelaySeconds: 30
+#          timeoutSeconds: 5
+#          periodSeconds: 10
+#          failureThreshold: 3
 
 ---
 
