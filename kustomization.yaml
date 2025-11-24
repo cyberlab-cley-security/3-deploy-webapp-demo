@@ -7,4 +7,4 @@ resources:
 images:
   - name: IMAGE_PLACEHOLDER # Matches placeholder in deployment.yaml
     newName: "396608779072.dkr.ecr.us-east-1.amazonaws.com/lab01-chrisley75-ecr-p5j" # Can be changed dynamically
-    newTag: "build-20251124-114805-1f7f026-52" # Can be updated via CI/CD
+    newTag: "build-20251124-115357-ccd729a-53" # Can be updated via CI/CD
